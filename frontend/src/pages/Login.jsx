@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   RecaptchaVerifier,
@@ -69,8 +69,9 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
+      const appUrl = import.meta.env.VITE_APP_URL || window.location.origin
       await sendSignInLinkToEmail(auth, value, {
-        url: window.location.origin + '/login',
+        url: appUrl + '/login',
         handleCodeInApp: true,
       })
       localStorage.setItem(EMAIL_STORAGE_KEY, value)
@@ -97,10 +98,12 @@ export default function Login() {
     }
   }
 
-  // Auto-handle email link on mount
-  if (typeof window !== 'undefined' && isSignInWithEmailLink(auth, window.location.href)) {
-    handleEmailLink()
-  }
+  // Auto-handle email link on mount (useEffect prevents re-calling on re-renders)
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      handleEmailLink()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = () => (channel === 'phone' ? sendPhoneOtp() : sendEmailLink())
   const handleVerify = () => (channel === 'phone' ? verifyPhoneOtp() : null)
